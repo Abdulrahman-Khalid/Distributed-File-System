@@ -10,10 +10,10 @@ def configure_port(ipPort, portType, connectionType):
     context = zmq.Context()
     socket = context.socket(portType)
     # ____POLICY: set upon instantiations
-    socket.setsockopt(zmq.LINGER,      0)
+    # socket.setsockopt(zmq.LINGER,      0)
     # ____POLICY: map upon IO-type thread
-    socket.setsockopt(zmq.AFFINITY,    1)
-    socket.setsockopt(zmq.RCVTIMEO, 30000)
+    # socket.setsockopt(zmq.AFFINITY,    1)
+    # socket.setsockopt(zmq.RCVTIMEO, 30000)
     if(connectionType == "connect"):
         socket.connect("tcp://" + ipPort)
     else:
