@@ -8,9 +8,8 @@ from DataKeeper import DataKeeper
 from Port import Port
 
 
-
 # Functions
-def configure_port(ipPort, portType, connectionType, openTimeOut = False):
+def configure_port(ipPort, portType, connectionType, openTimeOut=False):
     context = zmq.Context()
     socket = context.socket(portType)
     if(openTimeOut):
@@ -23,7 +22,8 @@ def configure_port(ipPort, portType, connectionType, openTimeOut = False):
         socket.bind("tcp://" + ipPort)
     return socket, context
 
-def configure_subscriber_port(openTimeOut = False):
+
+def configure_subscriber_port(openTimeOut=False):
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
     socket.setsockopt_string(zmq.SUBSCRIBE, "")
@@ -47,7 +47,6 @@ def get_ip():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as s:
         s.connect(("8.8.8.8", 80))
         return s.getsockname()[0]
-
 
 
 class MsgDetails(enum.Enum):
@@ -77,7 +76,7 @@ class DataKeeperType(enum.Enum):
 dataKeepersNum = 1
 dataKeeperNumOfProcesses = 1
 dataKeepersAlivePort = "30000"
-dataKeepersIps = [get_ip()] #TODO to be fill
+dataKeepersIps = [get_ip()]  # TODO to be fill
 dataKeeperPorts = []
 
 ########### Master Constants ###############
@@ -89,8 +88,3 @@ masterPortsArr = []
 ########### Replcatons Constants ###############
 replicationFactor = 2
 replicationPeriod = 4
-
-
-
-
-

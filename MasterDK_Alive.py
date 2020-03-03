@@ -15,12 +15,10 @@ def MasterDK_Alive(dataKeepers):
             while True:
                 receivedMessage = pickle.loads(subSocket.recv())
                 ip = receivedMessage['ip']
-                dataKeepers[ip] = DataKeeper(ip , dataKeepers[ip].arrPort , True)
+                dataKeepers[ip] = DataKeeper(ip, dataKeepers[ip].arrPort, True)
         except:
             pass
         finally:
             for key in dataKeepers.keys():
-                dataKeepers[key].isAlive = False   
-        #MasterDK_Alive(dataKeepers)
-        
-
+                dataKeepers[key].isAlive = False
+        # MasterDK_Alive(dataKeepers)
