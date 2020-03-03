@@ -18,19 +18,21 @@ def DK_Rep(myPort, filePath, arrFullPaths):
     while (True):
         # Recieve Msg
         recievedMsg = pickle.loads(mainSocket.recv())
-        # Take action based on the Msg
-        if(recievedMsg["id"] == MsgDetails.MASTER_DK_REPLICATE):
-            if(recievedMsg["type"] == DataKeeperType.DST):
-                replicate_as_DST(recievedMsg, filePath,
-                                 arrFullPaths, mainSocket)
-            elif(recievedMsg["type"] == DataKeeperType.SRC):
-                replicate_as_SRC(recievedMsg, myPort, myIp,
-                                 filePath, mainSocket)
+        msgType = recievedMsg["id"]
 
-        elif(recievedMsg["id"] == MsgDetails.CLIENT_DK_DOWNLOAD):
+        # Take action based on the Msg
+        if(msgType == MsgDetails.MASTER_DK_REPLICATE):
+            replicationRole = recievedMsg["type"]
+            if(replicationRole == DataKeeperType.DST):
+                replicate_as_DST(recievedMsg, filePath, arrFullPaths, mainSocket)
+            
+            elif(replicationRole == DataKeeperType.SRC):
+                replicate_as_SRC(recievedMsg, myPort, myIp, filePath, mainSocket)
+
+        elif(msgType == MsgDetails.CLIENT_DK_DOWNLOAD):
             send_to_client(recievedMsg, filePath, mainSocket)
 
-        elif(recievedMsg["id"] == MsgDetails.CLIENT_DK_UPLOAD):
+        elif(msgType == MsgDetails.CLIENT_DK_UPLOAD):
             recieve_from_client(recievedMsg, filePath,
                                 arrFullPaths, myIp, myPort, mainSocket)
 

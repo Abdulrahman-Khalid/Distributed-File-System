@@ -13,31 +13,39 @@ def MasterClient(dataKeeprs, files_metadata, portNum):
     while (True):
         # Recieve message
         recievedMsg = pickle.loads(Socket.recv())
+        msgType = recievedMsg["id"]
 
         # Take an action based on message Type
-        if(recievedMsg["id"] == MsgDetails.CLIENT_MASTER_UPLOAD):
+        if(msgType == MsgDetails.CLIENT_MASTER_UPLOAD):
             send_upload_data(dataKeeprs, Socket)
 
-        elif(recievedMsg["id"] == MsgDetails.CLIENT_MASTER_DOWNLOAD):
-            send_download_data(files_metadata, recievedMsg, portNum, Socket)
+        elif(msgType == MsgDetails.CLIENT_MASTER_DOWNLOAD):
+            send_download_data(files_metadata, dataKeeprs, recievedMsg, portNum, Socket)
 
-        elif(recievedMsg["id"] == MsgDetails.DK_MASTER_UPLOAD_SUCCESS):
+        elif(msgType == MsgDetails.DK_MASTER_UPLOAD_SUCCESS):
             upload_success(files_metadata, dataKeeprs, recievedMsg, Socket)
 
-        elif(recievedMsg["id"] == MsgDetails.CLIENT_MASTER_DOWNLOAD_SUCCESS):
+        elif(msgType == MsgDetails.CLIENT_MASTER_DOWNLOAD_SUCCESS):
             download_success(dataKeeprs, recievedMsg, Socket)
 
 
-def send_download_data(files_metadata, recievedMsg, portNum, Socket):
-    file_metadata = files_metadata[recievedMsg["fileName"]]
-    freePortFound = False
-    for idx, DK in enumerate(file_metadata.DKs):
-        if(DK.isAlive):
-            for key, value in DK.arrPort.items():
-                if(not value.isBusy):
-                    file_metadata.DKs[idx].arrPort[key].isBusy = True
+def send_download_data(files_metadata, dataKeepers, recievedMsg, portNum, Socket):
+    fileName = recievedMsg["fileName"]
+    file_metadata = files_metadata[fileName]
+    freePortFound = False  # Dummy Variable Used To Terminate The Outer Loop
+    # For All Data Keepers that contain that file
+    for DK_IP in file_metadata.DKs:
+        # Check if This Data Keeper is available
+        if(dataKeepers[DK_IP].isAlive):
+            # Loop on all this Data Keeper Ports to Check if one of them is free  
+            for portNum, port in dataKeepers[DK_IP].arrPort.items():
+                if(not port.isBusy):
+                    # Declare That this port isn't free any more
+                    dataKeeprs[DK_IP].arrPort[portNum] = Port(portNum ,True)
+                    # Tell The Master The Ip and Port of This available Machine  
                     sentMsg = {
-                        "id": MsgDetails.MASTER_CLIENT_DOWNLOAD_DETAILS, "ip": DK.ip, "port": key}
+                        "id": MsgDetails.MASTER_CLIENT_DOWNLOAD_DETAILS, 
+                        "ip": DK_IP, "port": portNum}
                     Socket.send(pickle.dumps(sentMsg))
                     freePortFound = True
                     break
@@ -46,14 +54,20 @@ def send_download_data(files_metadata, recievedMsg, portNum, Socket):
 
 
 def send_upload_data(dataKeeprs, Socket):
-    freePortFound = False
-    for key1, value1 in dataKeeprs.items():
-        if(value1.isAlive):
-            for key2, value2 in value1.arrPort.items():
-                if(not value2.isBusy):
-                    dataKeeprs[key1].arrPort[key2].isBusy = True
+    freePortFound = False   # Dummy Variable Used To Terminate The Outer Loop
+    # For All Available Data Keepers 
+    # TODO check on Size
+    for DK_IP, DK in dataKeeprs.items():
+        if(DK.isAlive):
+            # Loop on all this Data Keeper Ports to Check if one of them is free 
+            for portNum, port in value1.arrPort.items():
+                if(not port.isBusy):
+                    # Declare That this port isn't free any more
+                    dataKeeprs[DK_IP].arrPort[portNum] = Port(portNum ,True)
+                     # Tell The Master The Ip and Port of This available Machine  
                     sentMsg = {
-                        "id": MsgDetails.MASTER_CLIENT_UPLOAD_DETAILS, "ip": key1, "port": key2}
+                        "id": MsgDetails.MASTER_CLIENT_UPLOAD_DETAILS, 
+                        "ip": DK_IP, "port": portNum}
                     Socket.send(pickle.dumps(sentMsg))
                     freePortFound = True
                     break
@@ -62,17 +76,28 @@ def send_upload_data(dataKeeprs, Socket):
 
 
 def upload_success(files_metadata, dataKeepers, recievedMsg, Socket):
-    DKs = []
-    DKs.append(dataKeepers[recievedMsg["ip"]])
-    files_metadata[recievedMsg["fileName"]] = FileDetails(recievedMsg["fileName"],
-                                                          recievedMsg["clientId"],
-                                                          DKs)
-    dataKeepers[recievedMsg["ip"]].arrPort[recievedMsg["port"]].isBusy = False
+    # Extract Msg Data
+    fileName = recievedMsg["fileName"]
+    clientId = recievedMsg["clientId"]
+    MachineIp = recievedMsg["ip"]
+    MachinePort = recievedMsg["port"]
+    DKs = [MachineIp]
+    # Update The Look-Up Table
+    files_metadata[fileName] = FileDetails(fileName, clientId ,DKs)
+    # The Port is Free Now
+    dataKeepers[MachineIp].arrPort[MachinePort] = Port(MachinePort , False)
+    # Replay To The Data keeper
     sentMsg = {"id": MsgDetails.OK}
-    Socket.send(pickle.dumps(sentMsg))
+    Socket.send(pickle.dumps(sentMsg)) 
 
 
 def download_success(dataKeepers, recievedMsg, Socket):
-    dataKeepers[recievedMsg["ip"]].arrPort[recievedMsg["port"]].isBusy = False
+    # Extract Msg Data
+    MachineIp = recievedMsg["ip"]
+    MachinePort = recievedMsg["port"]
+
+    dataKeepers[MachineIp].arrPort[MachinePort] = Port(MachinePort ,False)
+
+    # Replay To The DK
     sentMsg = {"id": MsgDetails.OK}
     Socket.send(pickle.dumps(sentMsg))
