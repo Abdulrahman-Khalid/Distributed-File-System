@@ -11,16 +11,11 @@ manager = multiprocessing.Manager()
 dataKeepers = manager.dict()
 files_metadata = manager.dict()
 
-# Generate Ports for master processes
-for i in range(50002, 50002 + masterNumOfProcesses):
-    masterPortsArr.append(str(i))
-
 ports = {}
 # Generate Ports for all data keepers processes
 for j in range(30002, 30002 + dataKeeperNumOfProcesses):
     ports[str(j)] = Port(str(j))
-    dataKeeperPorts.append(str(j))
-
+    
 for ip in dataKeepersIps:
     dataKeepers[ip] = DataKeeper(ip, ports)
 

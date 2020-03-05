@@ -5,30 +5,6 @@ from FileDetails import FileDetails
 from Port import Port
 
 
-def MasterClient(dataKeeprs, files_metadata, portNum):
-    # Configure Master as a Replier to Client or DK
-    ipPort = "*:{}".format(portNum)
-    Socket, Context = configure_port(ipPort, zmq.REP, "bind")
-
-    while (True):
-        # Recieve message
-        recievedMsg = pickle.loads(Socket.recv())
-        msgType = recievedMsg["id"]
-
-        # Take an action based on message Type
-        if(msgType == MsgDetails.CLIENT_MASTER_UPLOAD):
-            send_upload_data(dataKeeprs, Socket)
-
-        elif(msgType == MsgDetails.CLIENT_MASTER_DOWNLOAD):
-            send_download_data(files_metadata, dataKeeprs, recievedMsg, portNum, Socket)
-
-        elif(msgType == MsgDetails.DK_MASTER_UPLOAD_SUCCESS):
-            upload_success(files_metadata, dataKeeprs, recievedMsg, Socket)
-
-        elif(msgType == MsgDetails.CLIENT_MASTER_DOWNLOAD_SUCCESS):
-            download_success(dataKeeprs, recievedMsg, Socket)
-
-
 def send_download_data(files_metadata, dataKeepers, recievedMsg, portNum, Socket):
     fileName = recievedMsg["fileName"]
     file_metadata = files_metadata[fileName]
@@ -41,7 +17,7 @@ def send_download_data(files_metadata, dataKeepers, recievedMsg, portNum, Socket
             for portNum, port in dataKeepers[DK_IP].arrPort.items():
                 if(not port.isBusy):
                     # Declare That this port isn't free any more
-                    dataKeeprs[DK_IP].arrPort[portNum] = Port(portNum ,True)
+                    dataKeepers[DK_IP].arrPort[portNum] = Port(portNum ,True)
                     # Tell The Master The Ip and Port of This available Machine  
                     sentMsg = {
                         "id": MsgDetails.MASTER_CLIENT_DOWNLOAD_DETAILS, 
@@ -60,7 +36,7 @@ def send_upload_data(dataKeeprs, Socket):
     for DK_IP, DK in dataKeeprs.items():
         if(DK.isAlive):
             # Loop on all this Data Keeper Ports to Check if one of them is free 
-            for portNum, port in value1.arrPort.items():
+            for portNum, port in DK.arrPort.items():
                 if(not port.isBusy):
                     # Declare That this port isn't free any more
                     dataKeeprs[DK_IP].arrPort[portNum] = Port(portNum ,True)
@@ -95,9 +71,33 @@ def download_success(dataKeepers, recievedMsg, Socket):
     # Extract Msg Data
     MachineIp = recievedMsg["ip"]
     MachinePort = recievedMsg["port"]
-
+    # The Port is Free Now
     dataKeepers[MachineIp].arrPort[MachinePort] = Port(MachinePort ,False)
-
     # Replay To The DK
     sentMsg = {"id": MsgDetails.OK}
     Socket.send(pickle.dumps(sentMsg))
+
+
+############## Main Funciton ##############
+def MasterClient(dataKeeprs, files_metadata, portNum):
+    # Configure Master as a Replier to Client or DK
+    ipPort = "*:{}".format(portNum)
+    Socket, Context = configure_port(ipPort, zmq.REP, "bind")
+
+    while (True):
+        # Recieve message
+        recievedMsg = pickle.loads(Socket.recv())
+        msgType = recievedMsg["id"]
+
+        # Take an action based on message Type
+        if(msgType == MsgDetails.CLIENT_MASTER_UPLOAD):
+            send_upload_data(dataKeeprs, Socket)
+
+        elif(msgType == MsgDetails.CLIENT_MASTER_DOWNLOAD):
+            send_download_data(files_metadata, dataKeeprs, recievedMsg, portNum, Socket)
+
+        elif(msgType == MsgDetails.DK_MASTER_UPLOAD_SUCCESS):
+            upload_success(files_metadata, dataKeeprs, recievedMsg, Socket)
+
+        elif(msgType == MsgDetails.CLIENT_MASTER_DOWNLOAD_SUCCESS):
+            download_success(dataKeeprs, recievedMsg, Socket)

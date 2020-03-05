@@ -6,7 +6,7 @@ action = sys.argv[1]
 fileName = sys.argv[2]
 clintID = sys.argv[3]
 
-masterPort = "50002"
+masterPort = "50003"
 socketMaster, contextMaster = configure_port(
     masterIP + ":" + masterPort, zmq.REQ, "connect")
 
@@ -33,7 +33,7 @@ def Download_file():
     with open(fileName, 'wb') as wfile:
         wfile.write(msgFromDK['data'])
 
-    masterPort = "50002"
+    masterPort = "50003"
     socketMaster2, contextMaster2 = configure_port(
         masterIP + ":" + masterPort, zmq.REQ, "connect")
     # tell the Master that The Download is succedded
@@ -61,6 +61,7 @@ def Upload_File():
     upload_file_to_DK(socketDK, data)
     # Recieve OK MSG From DK
     msgFromDK = pickle.loads(socketDK.recv())
+    
 
 
 def ask_master_to_download():

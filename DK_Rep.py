@@ -6,47 +6,21 @@ import sys
 import cv2
 
 
-# Using enum class create enumerations
-#filePath = "./Videos/"
-
-def DK_Rep(myPort, filePath, arrFullPaths):
-    myIp = get_ip()
-    # Configure myself as Replier
-    mainSocket, mainContext = configure_port(
-        "*:{}".format(myPort), zmq.REP, "bind")
-
-    while (True):
-        # Recieve Msg
-        recievedMsg = pickle.loads(mainSocket.recv())
-        msgType = recievedMsg["id"]
-
-        # Take action based on the Msg
-        if(msgType == MsgDetails.MASTER_DK_REPLICATE):
-            replicationRole = recievedMsg["type"]
-            if(replicationRole == DataKeeperType.DST):
-                replicate_as_DST(recievedMsg, filePath, arrFullPaths, mainSocket)
-            
-            elif(replicationRole == DataKeeperType.SRC):
-                replicate_as_SRC(recievedMsg, myPort, myIp, filePath, mainSocket)
-
-        elif(msgType == MsgDetails.CLIENT_DK_DOWNLOAD):
-            send_to_client(recievedMsg, filePath, mainSocket)
-
-        elif(msgType == MsgDetails.CLIENT_DK_UPLOAD):
-            recieve_from_client(recievedMsg, filePath,
-                                arrFullPaths, myIp, myPort, mainSocket)
-
-
 def replicate_as_DST(recievedMsg, filePath, arrFullPaths, mainSocket):
+    # Extract Msg Data
+    srcIP = recievedMsg["srcIp"]
+    srcPort = recievedMsg["srcPort"]
+    # We have To Define New Port for Src as 
+    # The main port is used for receiving not sending
+    newSrcPort = str(int(srcPort) + 10000)
     # Connect to Source
-    socket, context = configure_port(
-        recievedMsg["srcIp"] + ":" + recievedMsg["srcPort"], zmq.SUB, "connect")
+    socket, context = configure_port(srcIP + ":" + newSrcPort, zmq.PULL, "connect")
     # Recieve the file from the src
-    allMsg = pickle.loads(socket.recv())
+    dataMsg = pickle.loads(socket.recv())
     # Save file to the Hard Drive
-    fullPath = filePath + allMsg["fileName"]
+    fullPath = filePath + dataMsg["fileName"]
     with open(fullPath, "wb") as wfile:
-        wfile.write(allMsg["data"])
+        wfile.write(dataMsg["data"])
         arrFullPaths.append(fullPath)
     # reply to master replication process
     mainSocket.send(pickle.dumps({"id": MsgDetails.OK}))
@@ -56,16 +30,19 @@ def replicate_as_DST(recievedMsg, filePath, arrFullPaths, mainSocket):
 
 
 def replicate_as_SRC(recievedMsg, myPort, myIp, filePath, mainSocket):
-    # Configure my port
-    socket, context = configure_port(
-        myIp + ":" + myPort, zmq.PUB, "bind")
+    # Extract Msg Data
+    fileName = recievedMsg["fileName"]
+    # We have To Define New Port for Src as 
+    # The main port is used for receiving not sending
+    newPort = str(int(myPort) + 10000)
+    # Configure my Port
+    socket, context = configure_port(myIp + ":" + newPort, zmq.PUSH, "bind")
     # Read file from the Hard Drive
-    file = open(filePath + recievedMsg["fileName"], "rb")
+    file = open(filePath + fileName, "rb")
     video = file.read()
     file.close()
     # Send the file to the destination
-    dataToSend = {"id": MsgDetails.OK,
-                  "fileName": recievedMsg["fileName"], "data": video}
+    dataToSend = {"id": MsgDetails.OK, "fileName": fileName, "data": video}
     socket.send(pickle.dumps(dataToSend))
     # reply to master replication process
     mainSocket.send(pickle.dumps({"id": MsgDetails.OK}))
@@ -75,20 +52,23 @@ def replicate_as_SRC(recievedMsg, myPort, myIp, filePath, mainSocket):
 
 
 def send_to_client(recievedMsg, filePath, mainSocket):
+    # Extract Msg Data
+    fileName = recievedMsg["fileName"]
     # Prepare the file path
-    fullPath = filePath + recievedMsg["fileName"]
+    fullPath = filePath + fileName 
     # Read file from the Hard Drive
     file = open(fullPath, "rb")
     data = file.read()
     file.close()
     # Send the file to Client [Download]
-    mainSocket.send(pickle.dumps(
-        {"id": MsgDetails.OK, "fileName": recievedMsg["fileName"], "data": data}))
+    mainSocket.send(pickle.dumps({"id": MsgDetails.OK, "fileName": fileName , "data": data}))
 
 
 def recieve_from_client(recievedMsg, filePath, arrFullPaths, myIp, myPort, mainSocket):
+    # Extract Msg Data
+    fileName = recievedMsg["fileName"]
     # Prepare the file path
-    fullPath = filePath + recievedMsg["fileName"]
+    fullPath = filePath + fileName
     # Save file to the Hard Drive [Upload]
     with open(fullPath, "wb") as wfile:
         wfile.write(recievedMsg["data"])
@@ -113,3 +93,31 @@ def send_upload_success_to_master(recievedMsg, filePath, myIp, myPort):
     msgFromMaster = pickle.loads(socket.recv())
     socket.close()
     context.destroy()
+
+
+############## Main Funciton ##############
+def DK_Rep(myPort, filePath, arrFullPaths, myIp):
+    # Configure myself as Replier
+    mainSocket, mainContext = configure_port(
+        myIp + ":{}".format(myPort), zmq.REP, "bind")
+        
+    while (True):
+        # Recieve Msg
+        recievedMsg = pickle.loads(mainSocket.recv())
+        msgType = recievedMsg["id"]
+
+        # Take action based on the Msg
+        if(msgType == MsgDetails.MASTER_DK_REPLICATE):
+            replicationRole = recievedMsg["type"]
+            if(replicationRole == DataKeeperType.DST):
+                replicate_as_DST(recievedMsg, filePath, arrFullPaths, mainSocket)
+            
+            elif(replicationRole == DataKeeperType.SRC):
+                replicate_as_SRC(recievedMsg, myPort, myIp, filePath, mainSocket)
+
+        elif(msgType == MsgDetails.CLIENT_DK_DOWNLOAD):
+            send_to_client(recievedMsg, filePath, mainSocket)
+
+        elif(msgType == MsgDetails.CLIENT_DK_UPLOAD):
+            recieve_from_client(recievedMsg, filePath,
+                                arrFullPaths, myIp, myPort, mainSocket)

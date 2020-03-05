@@ -7,10 +7,9 @@ import pickle
 import time
 
 
-def DK_MASTER_ALIVE():
+def DK_Master_Alive(myIp):
     # Configure myself as publisher with with master
-    myIp = get_ip()
-    ipPort = "*" + ":" + dataKeepersAlivePort
+    ipPort = myIp + ":" + dataKeepersAlivePort
     pubSocket, pubContext = configure_port(ipPort, zmq.PUB, 'bind')
     # I'm Alive Msg that will be sent periodically
     msg = {'id': MsgDetails.DK_MASTER_ALIVE, 'msg': "I'm Alive", 'ip': myIp}

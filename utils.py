@@ -73,10 +73,10 @@ class DataKeeperType(enum.Enum):
 
 # Constants #
 ########### Data Keepers Constants ###############
-dataKeepersNum = 1
+dataKeepersNum = 2
 dataKeeperNumOfProcesses = 1
 dataKeepersAlivePort = "30000"
-dataKeepersIps = [get_ip()]  # TODO to be fill
+dataKeepersIps = [get_ip(), "192.168.2.105"]  # TODO to be fill
 dataKeeperPorts = []
 
 ########### Master Constants ###############
@@ -88,3 +88,15 @@ masterPortsArr = []
 ########### Replcatons Constants ###############
 replicationFactor = 2
 replicationPeriod = 4
+
+
+
+# Generate Ports for master processes
+for i in range(50002, 50002 + masterNumOfProcesses):
+    masterPortsArr.append(str(i))
+    
+# Generate Ports for all data keepers processes
+for j in range(30002, 30002 + dataKeeperNumOfProcesses):
+    dataKeeperPorts.append(str(j))
+
+    
