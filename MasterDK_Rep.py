@@ -36,8 +36,12 @@ def select_machines_to_copy_to(replicationNum, DKs, dataKeepers):
         if(DK.isAlive and (DK_IP not in DKs)):
             for portNum, port in DK.arrPort.items():
                 if(not port.isBusy):
-                     # Declare That this port isn't free any more
-                    dataKeepers[DK_IP].arrPort[portNum] = Port(portNum ,True)
+                    # Declare That this port isn't free any more
+                    modifiedArrPorts = dataKeepers[DK_IP].arrPort.copy()
+                    modifiedArrPorts[portNum].isBusy = True
+                    dataKeepers[DK_IP] = DataKeeper(DK_IP, modifiedArrPorts, 
+                                                        dataKeepers[DK_IP].isAlive)
+                    # Append it to the List of Free Ports
                     freeMachinePorts.append((DK_IP, portNum))
                     # I need Number of DST Machines equal to replicationNum
                     if(replicationNum == len(freeMachinePorts)):
@@ -73,7 +77,10 @@ def get_Dsts_response(freePorts, dstSockets, dstContexts, dataKeepers, files_met
         # Recieve OK MSG From DST To Notify That Port is Free Now
         msgFromDK = pickle.loads(dstSockets[idx].recv())
         # Declare That This Dst Port is Free Now
-        dataKeepers[dstIp].arrPort[dstPort] = Port(dstPort ,False)
+        modifiedArrPorts = dataKeepers[dstIp].arrPort.copy()
+        modifiedArrPorts[dstPort].isBusy = False
+        dataKeepers[dstIp] = DataKeeper(dstIp, modifiedArrPorts, 
+                                         dataKeepers[dstIp].isAlive)
         # Add This Data keeper to the File Data Keepers
         NewDKs = files_metadata[fileName].DKs.copy()
         NewDKs.append(dstIp)
@@ -85,7 +92,10 @@ def get_Dsts_response(freePorts, dstSockets, dstContexts, dataKeepers, files_met
         idx += 1
 
 def get_Src_response(src_socket, src_context, srcIP, srcPort, dataKeepers):
-    dataKeepers[srcIP].arrPort[srcPort]= Port(srcPort ,True)
+    modifiedArrPorts = dataKeepers[srcIP].arrPort.copy()
+    modifiedArrPorts[srcPort].isBusy = False
+    dataKeepers[srcIP] = DataKeeper(srcIP, modifiedArrPorts, 
+                                    dataKeepers[srcIP].isAlive)
     src_socket.close()
     src_context.destroy()
 

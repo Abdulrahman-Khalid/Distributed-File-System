@@ -23,16 +23,21 @@ def configure_port(ipPort, portType, connectionType, openTimeOut=False):
     return socket, context
 
 
-def configure_subscriber_port(openTimeOut=False):
+def configure_multiple_ports(IPs , ports, portType, openTimeOut=False):
     context = zmq.Context()
-    socket = context.socket(zmq.SUB)
-    socket.setsockopt_string(zmq.SUBSCRIBE, "")
+    socket = context.socket(portType)
+    if(portType == zmq.SUB):
+        socket.setsockopt_string(zmq.SUBSCRIBE, "")
     if(openTimeOut):
         socket.setsockopt(zmq.LINGER,      0)
         socket.setsockopt(zmq.AFFINITY,    1)
         socket.setsockopt(zmq.RCVTIMEO, 900)
-    for ip in dataKeepersIps:
-        socket.connect("tcp://" + ip + ":" + dataKeepersAlivePort)
+    if (isinstance(IPs, list)):
+        for ip in IPs:
+            socket.connect("tcp://" + ip + ":" + ports)
+    else:
+        for port in ports:
+            socket.connect("tcp://" + IPs + ":" + port)
     return socket, context
 
 
@@ -64,6 +69,7 @@ class MsgDetails(enum.Enum):
     MASTER_CLIENT_DOWNLOAD_DETAILS = 10
     ######################
     OK = 11
+    FAIL = 12
 
 
 class DataKeeperType(enum.Enum):
@@ -81,8 +87,8 @@ dataKeeperPorts = []
 
 ########### Master Constants ###############
 masterNumOfProcesses = 2
-masterIP = get_ip()
 masterReplicatePort = "50001"
+masterIP = get_ip()
 masterPortsArr = []
 
 ########### Replcatons Constants ###############

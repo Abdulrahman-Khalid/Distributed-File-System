@@ -57,11 +57,17 @@ def send_to_client(recievedMsg, filePath, mainSocket):
     # Prepare the file path
     fullPath = filePath + fileName 
     # Read file from the Hard Drive
-    file = open(fullPath, "rb")
-    data = file.read()
-    file.close()
+    try:
+        file = open(fileName, 'rb')
+        data = file.read()
+        file.close()
+    except: 
+        failMsg = {"id": MsgDetails.FAIL, "Msg": "File is corrupted on this Data Keeper."}
+        mainSocket.send(pickle.dumps(failMsg))
+        return
     # Send the file to Client [Download]
-    mainSocket.send(pickle.dumps({"id": MsgDetails.OK, "fileName": fileName , "data": data}))
+    fileMg = {"id": MsgDetails.OK, "fileName": fileName , "data": data}
+    mainSocket.send(pickle.dumps(fileMg))
 
 
 def recieve_from_client(recievedMsg, filePath, arrFullPaths, myIp, myPort, mainSocket):
@@ -81,18 +87,16 @@ def recieve_from_client(recievedMsg, filePath, arrFullPaths, myIp, myPort, mainS
 
 def send_upload_success_to_master(recievedMsg, filePath, myIp, myPort):
     # Configure the connection with master
-    randMasterPort = "50002"  # TODO genrate random port from Utils.masterPortsArr
-    socket, context = configure_port(
-        masterIP + ":" + randMasterPort, zmq.REQ, "connect")
+    socketMaster, contextMaster = configure_multiple_ports(masterIP , masterPortsArr, zmq.REQ)
     # Tell The master my Ip and Port to make me available again [Free Port]
     dataToSend = {"id": MsgDetails.DK_MASTER_UPLOAD_SUCCESS,
                   "ip": myIp, "port": myPort, "clientId": recievedMsg["clientId"],
                   "fileName": recievedMsg["fileName"], "filePath": filePath}  # FROM DK TO MASTER
-    socket.send(pickle.dumps(dataToSend))
+    socketMaster.send(pickle.dumps(dataToSend))
     # Recieve OK MSG From Master
-    msgFromMaster = pickle.loads(socket.recv())
-    socket.close()
-    context.destroy()
+    msgFromMaster = pickle.loads(socketMaster.recv())
+    socketMaster.close()
+    contextMaster.destroy()
 
 
 ############## Main Funciton ##############
