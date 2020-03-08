@@ -12,10 +12,12 @@ from Port import Port
 def configure_port(ipPort, portType, connectionType, openTimeOut=False):
     context = zmq.Context()
     socket = context.socket(portType)
+    if(portType == zmq.SUB):
+        socket.setsockopt_string(zmq.SUBSCRIBE, "")
     if(openTimeOut):
         socket.setsockopt(zmq.LINGER,      0)
         socket.setsockopt(zmq.AFFINITY,    1)
-        socket.setsockopt(zmq.RCVTIMEO, 1000)
+        socket.setsockopt(zmq.RCVTIMEO, 800)
     if(connectionType == "connect"):
         socket.connect("tcp://" + ipPort)
     else:
@@ -23,7 +25,7 @@ def configure_port(ipPort, portType, connectionType, openTimeOut=False):
     return socket, context
 
 
-def configure_multiple_ports(IPs , ports, portType, openTimeOut=False):
+def configure_multiple_ports(IPs, ports, portType, openTimeOut=False):
     context = zmq.Context()
     socket = context.socket(portType)
     if(portType == zmq.SUB):
@@ -31,7 +33,7 @@ def configure_multiple_ports(IPs , ports, portType, openTimeOut=False):
     if(openTimeOut):
         socket.setsockopt(zmq.LINGER,      0)
         socket.setsockopt(zmq.AFFINITY,    1)
-        socket.setsockopt(zmq.RCVTIMEO, 900)
+        socket.setsockopt(zmq.RCVTIMEO, 800)
     if (isinstance(IPs, list)):
         for ip in IPs:
             socket.connect("tcp://" + ip + ":" + ports)
@@ -79,30 +81,29 @@ class DataKeeperType(enum.Enum):
 
 # Constants #
 ########### Data Keepers Constants ###############
-dataKeepersNum = 2
+dataKeepersNum = 3
 dataKeeperNumOfProcesses = 1
 dataKeepersAlivePort = "30000"
-dataKeepersIps = [get_ip(), "192.168.2.105"]  # TODO to be fill
+dataKeepersIps = ["192.168.43.195",
+                  "192.168.43.6", "192.168.43.234"]  # TODO to be fill
 dataKeeperPorts = []
 
 ########### Master Constants ###############
-masterNumOfProcesses = 2
+masterNumOfProcesses = 1
 masterReplicatePort = "50001"
-masterIP = get_ip()
+masterIP = "192.168.43.234"
 masterPortsArr = []
 
 ########### Replcatons Constants ###############
-replicationFactor = 2
+replicationFactor = 3
 replicationPeriod = 4
-
 
 
 # Generate Ports for master processes
 for i in range(50002, 50002 + masterNumOfProcesses):
     masterPortsArr.append(str(i))
-    
+
 # Generate Ports for all data keepers processes
 for j in range(30002, 30002 + dataKeeperNumOfProcesses):
     dataKeeperPorts.append(str(j))
-
-    
+print(get_ip())

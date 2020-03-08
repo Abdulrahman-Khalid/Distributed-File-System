@@ -9,8 +9,8 @@ from utils import *
 
 def MasterDK_Alive(dataKeepers):
     # Configure myself as subscriber all data keepers
-    subSocket, subContext = configure_multiple_ports(dataKeepersIps, 
-                                dataKeepersAlivePort, zmq.SUB, True)
+    subSocket, subContext = configure_multiple_ports(dataKeepersIps,
+                                                     dataKeepersAlivePort, zmq.SUB, True)
     while(True):
         try:
             while True:
@@ -19,7 +19,9 @@ def MasterDK_Alive(dataKeepers):
                 dataKeepers[ip] = DataKeeper(ip, dataKeepers[ip].arrPort, True)
         except:
             pass
-        finally: 
+        finally:
             for DK_IP in dataKeepers.keys():
-                dataKeepers[DK_IP] = DataKeeper(DK_IP, dataKeepers[DK_IP].arrPort, False)
-
+                print(dataKeepers[DK_IP].isAlive)
+            for DK_IP in dataKeepers.keys():
+                dataKeepers[DK_IP] = DataKeeper(
+                    DK_IP, dataKeepers[DK_IP].arrPort, False)
