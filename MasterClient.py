@@ -8,7 +8,7 @@ from Port import Port
 
 def send_download_data(files_metadata, dataKeepers, recievedMsg, portNum, Socket):
     fileName = recievedMsg["fileName"]
-
+    # This file isn't being uploaded before
     if fileName not in files_metadata:
         sentMsg = {"id": MsgDetails.FAIL, "Msg": "File isn't exist."}
         Socket.send(pickle.dumps(sentMsg))
@@ -37,6 +37,7 @@ def send_download_data(files_metadata, dataKeepers, recievedMsg, portNum, Socket
                     break
         if(freePortFound):
             break
+    # All Ports are Busy or all Machines that contain that file are down
     if(not freePortFound):
         sentMsg = {"id": MsgDetails.FAIL, "Msg":"All ports are Busy, Try again Later."}
         Socket.send(pickle.dumps(sentMsg))
@@ -64,6 +65,7 @@ def send_upload_data(dataKeepers, Socket):
                     break
         if(freePortFound):
             break
+     # All Ports are Busy or all Machines that contain that file are down
     if(not freePortFound):
         sentMsg = {"id": MsgDetails.FAIL, "Msg":"All ports are Busy, Try again Later."}
         Socket.send(pickle.dumps(sentMsg))

@@ -8,11 +8,8 @@ from DK_Rep import DK_Rep
 manager = multiprocessing.Manager()
 arrFullPaths = manager.list()
 
-#path = './Videos/'
-#IP = get_ip()
-
-IP = sys.argv[1]
-path = sys.argv[2]
+path = './Videos/'
+IP = get_ip()
 
 processes = []
 # process that will send alive message to master

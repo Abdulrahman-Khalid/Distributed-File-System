@@ -8,7 +8,11 @@ from MasterDK_Rep import MasterDK_Rep
 from MasterDK_Alive import MasterDK_Alive
 
 manager = multiprocessing.Manager()
+# Save all the Data Keepers Informaton 
+# [their IP, their free and busy Ports, isAlive of not ]
 dataKeepers = manager.dict()
+# Save all files Informaton 
+# [their name, their Client ID, the Data Keepers that they are in ]
 files_metadata = manager.dict()
 
 ports = {}

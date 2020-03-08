@@ -58,7 +58,7 @@ def send_to_client(recievedMsg, filePath, mainSocket):
     fullPath = filePath + fileName 
     # Read file from the Hard Drive
     try:
-        file = open(fileName, 'rb')
+        file = open(fullPath, 'rb')
         data = file.read()
         file.close()
     except: 

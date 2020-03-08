@@ -26,6 +26,8 @@ def get_source_Machine(DKs, dataKeepers):
                     return DK_IP, portNum
     # return None if there isn't any free port 
     # at any available machine that contain that file
+    # [it must not happen as we already check for the instance count
+    # and it was greater than one ]
     return None, None
 
 
@@ -48,34 +50,29 @@ def select_machines_to_copy_to(replicationNum, DKs, dataKeepers):
                         return freeMachinePorts
     return freeMachinePorts
 
-def notify_src(srcIP, srcPort, fileName):
-    src_socket, src_context = configure_port(srcIP + ":" + srcPort, zmq.REQ, 'connect')
-    srcMessage = {'id': MsgDetails.MASTER_DK_REPLICATE, 
-                  "type": DataKeeperType.SRC, "fileName": fileName}
-    src_socket.send(pickle.dumps(srcMessage))
-    return src_socket, src_context
 
-def notify_Dsts(srcIP, srcPort, freePorts):
-    dstSockets = []
-    dstContexts = []
-
+def notify_DKs(srcIP, srcPort, freePorts, fileName, dataKeepers, files_metadata):
     # DST MSG
     dstMessage = {'id': MsgDetails.MASTER_DK_REPLICATE,
                   "type": DataKeeperType.DST, 'srcIp': srcIP, 'srcPort': srcPort}
+    # SRC MSG
+    srcMessage = {'id': MsgDetails.MASTER_DK_REPLICATE, 
+                  "type": DataKeeperType.SRC, "fileName": fileName}
+
+    # Connect to SRC
+    src_socket, src_context = configure_port(srcIP + ":" + srcPort, zmq.REQ, 'connect')
 
     for dstIp, dstPort in freePorts:
+        # Connect to DST
         dst_socket, dst_context = configure_port(dstIp + ":" + dstPort, zmq.REQ, 'connect')
-        dstSockets.append(dst_socket)
-        dstContexts.append(dst_context)
+        # Notify SRC
+        src_socket.send(pickle.dumps(srcMessage))
+        # Notify DST
         dst_socket.send(pickle.dumps(dstMessage))
-
-    return dstSockets, dstContexts
-
-def get_Dsts_response(freePorts, dstSockets, dstContexts, dataKeepers, files_metadata, fileName):
-    idx = 0
-    for dstIp, dstPort in freePorts:
-        # Recieve OK MSG From DST To Notify That Port is Free Now
-        msgFromDK = pickle.loads(dstSockets[idx].recv())
+        # Get SRC Response
+        msgFromDK = pickle.loads(src_socket.recv())
+        # Get DST Response
+        msgFromDK = pickle.loads(dst_socket.recv())
         # Declare That This Dst Port is Free Now
         modifiedArrPorts = dataKeepers[dstIp].arrPort.copy()
         modifiedArrPorts[dstPort].isBusy = False
@@ -87,18 +84,18 @@ def get_Dsts_response(freePorts, dstSockets, dstContexts, dataKeepers, files_met
         files_metadata[fileName] = FileDetails(fileName, 
                                                files_metadata[fileName].clientId ,NewDKs)
         # Terminate The connection with That Dst
-        dstSockets[idx].close()
-        dstContexts[idx].destroy()
-        idx += 1
+        dst_socket.close()
+        dst_context.destroy()
 
-def get_Src_response(src_socket, src_context, srcIP, srcPort, dataKeepers):
+    # Declare That This SRC Port is Free Now
     modifiedArrPorts = dataKeepers[srcIP].arrPort.copy()
     modifiedArrPorts[srcPort].isBusy = False
     dataKeepers[srcIP] = DataKeeper(srcIP, modifiedArrPorts, 
                                     dataKeepers[srcIP].isAlive)
+     # Terminate The connection with That Src
     src_socket.close()
     src_context.destroy()
-
+    
 ############## Main Funciton ##############
 def MasterDK_Rep(dataKeepers, files_metadata):
     while True:
@@ -108,21 +105,12 @@ def MasterDK_Rep(dataKeepers, files_metadata):
             instanceCount = get_instance_count(file.DKs, dataKeepers)
             # Calculate number of Replications Needed
             Replications = replicationFactor - instanceCount
-            # Find Free Port on available machine that contain that file
-            srcIp, srcPort = get_source_Machine(file.DKs, dataKeepers)
-            # Find Number of Dst equal to number of Replications Needed
-            freePorts = select_machines_to_copy_to(Replications, file.DKs, dataKeepers)
-            if(len(freePorts) > 0):
-                ########## transfer data from source to destination #########
-                # Notify Source
-                src_socket, src_context = notify_src(srcIp, srcPort, file.fileName)
-                # Notify All Destinations
-                dstSockets, dstContexts = notify_Dsts(srcIp, srcPort, freePorts)
-                # Get Destanitions Response, Declare Them as Free Ports & Terminate Their Connection
-                # Add Them To The File Data Keepers
-                get_Dsts_response(freePorts, dstSockets, dstContexts, 
-                                  dataKeepers, files_metadata, file.fileName)
-                # Get Src Response, Declare it as Free Ports & Terminate its Connection
-                get_Src_response(src_socket, src_context, srcIp, srcPort, dataKeepers)
-            
+            if(Replications > 0):
+                # Find Free Port on available machine that contain that file
+                srcIp, srcPort = get_source_Machine(file.DKs, dataKeepers)
+                # Find Number of Dst equal to number of Replications Needed
+                freePorts = select_machines_to_copy_to(Replications, file.DKs, dataKeepers)
+                # transfer data from source to all destinations
+                notify_DKs(srcIp, srcPort, freePorts, file.fileName, dataKeepers, files_metadata)
+               
         time.sleep(replicationPeriod)
