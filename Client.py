@@ -18,7 +18,7 @@ def Download_file(socketMaster):
     # End Connection with Master
     socketMaster.close()
     contextMaster.destroy()
-
+    # If There was an Error Msg, Print it and return [No Free Ports]
     if(msgFromMaster['id'] == MsgDetails.FAIL):
         print(msgFromMaster["Msg"])
         return
@@ -32,16 +32,14 @@ def Download_file(socketMaster):
     # End Connection with DK
     socketDK.close()
     contextDK.destroy()
-
+    # If There was an Error Msg, Print it and return [File is Corrupted in DK]
     if(msgFromDK['id'] == MsgDetails.FAIL):
         print(msgFromDK["Msg"])
         # TODO: May be Sent To Master
         return
-
     # Save video
     with open(fileName, 'wb') as wfile:
         wfile.write(msgFromDK['data'])
-
     # tell the Master that The Download is succedded
     send_success_message(msgFromMaster)
 
@@ -55,7 +53,6 @@ def Upload_File(socketMaster):
     except:
         print("File isn't exist on your machine.")
         return
-
     # Ask The master For The ip and Port
     ask_master_to_upload()
     # Recieve ip and Port from Master
@@ -76,8 +73,7 @@ def Upload_File(socketMaster):
     print("2")
     # Recieve OK MSG From DK
     msgFromDK = pickle.loads(socketDK.recv())
-    print("3")
-    # End Connection With Data Keeper
+    # End Connection with DK
     socketDK.close()
     contextDK.destroy()
 

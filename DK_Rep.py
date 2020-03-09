@@ -7,7 +7,7 @@ import cv2
 import threading
 
 
-def replicate_as_DST(recievedMsg, filePath, arrFullPaths, mainSocket):
+def replicate_as_DST(recievedMsg, filePath, arrFullPaths, mainSocket, arrFullPathsLock):
     # Extract Msg Data
     srcIP = recievedMsg["srcIp"]
     srcPort = recievedMsg["srcPort"]
@@ -23,7 +23,9 @@ def replicate_as_DST(recievedMsg, filePath, arrFullPaths, mainSocket):
     fullPath = filePath + dataMsg["fileName"]
     with open(fullPath, "wb") as wfile:
         wfile.write(dataMsg["data"])
+        arrFullPathsLock.acquire()
         arrFullPaths.append(fullPath)
+        arrFullPathsLock.release()
     # reply to master replication process
     mainSocket.send(pickle.dumps({"id": MsgDetails.OK}))
     # Terminate Connection
@@ -60,7 +62,7 @@ def send_to_client(recievedMsg, filePath, mainSocket):
     fullPath = filePath + fileName
     # Read file from the Hard Drive
     try:
-        file = open(fileName, 'rb')
+        file = open(fullPath, 'rb')
         data = file.read()
         file.close()
     except:
@@ -73,7 +75,7 @@ def send_to_client(recievedMsg, filePath, mainSocket):
     mainSocket.send(pickle.dumps(fileMg))
 
 
-def recieve_from_client(recievedMsg, filePath, arrFullPaths, myIp, myPort, mainSocket):
+def recieve_from_client(recievedMsg, filePath, arrFullPaths, myIp, myPort, mainSocket, arrFullPathsLock):
     # Extract Msg Data
     fileName = recievedMsg["fileName"]
     # Prepare the file path
@@ -81,7 +83,9 @@ def recieve_from_client(recievedMsg, filePath, arrFullPaths, myIp, myPort, mainS
     # Save file to the Hard Drive [Upload]
     with open(fullPath, "wb") as wfile:
         wfile.write(recievedMsg["data"])
+    arrFullPathsLock.acquire()
     arrFullPaths.append(fullPath)
+    arrFullPathsLock.release()
     # FROM DK TO CLIENT
     mainSocket.send(pickle.dumps({"id": MsgDetails.OK}))
     # Tell the master that the upload is ended successfully
@@ -117,10 +121,8 @@ def DK_Rep(myPort, filePath, arrFullPaths, myIp, arrFullPathsLock):
         if(msgType == MsgDetails.MASTER_DK_REPLICATE):
             replicationRole = recievedMsg["type"]
             if(replicationRole == DataKeeperType.DST):
-                arrFullPathsLock.acquire()
                 replicate_as_DST(recievedMsg, filePath,
-                                 arrFullPaths, mainSocket)
-                arrFullPathsLock.release()
+                                 arrFullPaths, mainSocket, arrFullPathsLock)
             elif(replicationRole == DataKeeperType.SRC):
                 replicate_as_SRC(recievedMsg, myPort, myIp,
                                  filePath, mainSocket)
@@ -130,4 +132,4 @@ def DK_Rep(myPort, filePath, arrFullPaths, myIp, arrFullPathsLock):
 
         elif(msgType == MsgDetails.CLIENT_DK_UPLOAD):
             recieve_from_client(recievedMsg, filePath,
-                                arrFullPaths, myIp, myPort, mainSocket)
+                                arrFullPaths, myIp, myPort, mainSocket, arrFullPathsLock)

@@ -6,9 +6,13 @@ import zmq
 import enum
 from DataKeeper import DataKeeper
 from Port import Port
-
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+import time
 
 # Functions
+
+
 def configure_port(ipPort, portType, connectionType, openTimeOut=False):
     context = zmq.Context()
     socket = context.socket(portType)
@@ -33,7 +37,7 @@ def configure_multiple_ports(IPs, ports, portType, openTimeOut=False):
     if(openTimeOut):
         socket.setsockopt(zmq.LINGER,      0)
         socket.setsockopt(zmq.AFFINITY,    1)
-        socket.setsockopt(zmq.RCVTIMEO, 800)
+        socket.setsockopt(zmq.RCVTIMEO,  700)
     if (isinstance(IPs, list)):
         for ip in IPs:
             socket.connect("tcp://" + ip + ":" + ports)
@@ -41,13 +45,6 @@ def configure_multiple_ports(IPs, ports, portType, openTimeOut=False):
         for port in ports:
             socket.connect("tcp://" + IPs + ":" + port)
     return socket, context
-
-
-def find_free_port():
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_STREAM)) as s:
-        s.bind(('', 0))
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        return s.getsockname()[1]
 
 
 def get_ip():
@@ -81,21 +78,20 @@ class DataKeeperType(enum.Enum):
 
 # Constants #
 ########### Data Keepers Constants ###############
-dataKeepersNum = 3
+dataKeepersNum = 1
 dataKeeperNumOfProcesses = 1
 dataKeepersAlivePort = "30000"
-dataKeepersIps = ["192.168.43.195",
-                  "192.168.43.6", "192.168.43.234"]  # TODO to be fill
+dataKeepersIps = [get_ip()]  # TODO to be fill
 dataKeeperPorts = []
 
 ########### Master Constants ###############
 masterNumOfProcesses = 1
 masterReplicatePort = "50001"
-masterIP = "192.168.43.234"
+masterIP = get_ip()
 masterPortsArr = []
 
 ########### Replcatons Constants ###############
-replicationFactor = 3
+replicationFactor = 1
 replicationPeriod = 4
 
 
@@ -106,4 +102,3 @@ for i in range(50002, 50002 + masterNumOfProcesses):
 # Generate Ports for all data keepers processes
 for j in range(30002, 30002 + dataKeeperNumOfProcesses):
     dataKeeperPorts.append(str(j))
-print(get_ip())

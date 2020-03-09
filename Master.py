@@ -9,7 +9,11 @@ from MasterDK_Alive import MasterDK_Alive
 import threading
 
 manager = multiprocessing.Manager()
+# Save all the Data Keepers Informaton
+# [their IP, their free and busy Ports, isAlive of not ]
 dataKeepers = manager.dict()
+# Save all files Informaton
+# [their name, their Client ID, the Data Keepers that they are in ]
 files_metadata = manager.dict()
 
 ports = {}
@@ -33,17 +37,17 @@ p.start()  # ...and run!
 
 # N-Replicates Process
 # launch a process which will increment every value of s_arr
+fileMetaDataLock = threading.Lock()
 p = multiprocessing.Process(
-    target=MasterDK_Rep, args=(dataKeepers, files_metadata, dataKeepersLock))
+    target=MasterDK_Rep, args=(dataKeepers, files_metadata, fileMetaDataLock, dataKeepersLock))
 processes.append(p)  # remember it
 p.start()  # ...and run!
 
 # Client & DK Processes
-fileMetaDataLock = threading.Lock()
 for x in range(masterNumOfProcesses):
     # launch a process which will increment every value of s_arr
     p = multiprocessing.Process(target=MasterClient, args=(
-        dataKeepers, files_metadata, masterPortsArr[x], fileMetaDataLock))
+        dataKeepers, files_metadata, masterPortsArr[x], fileMetaDataLock, dataKeepersLock))
     processes.append(p)  # remember it
     p.start()  # ...and run!
 

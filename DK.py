@@ -12,9 +12,6 @@ arrFullPaths = manager.list()
 path = './Videos/'
 IP = get_ip()
 
-# IP = sys.argv[1]
-# path = sys.argv[2]
-
 processes = []
 # process that will send alive message to master
 p = multiprocessing.Process(target=DK_Master_Alive, args=(IP,))
