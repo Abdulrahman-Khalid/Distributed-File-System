@@ -87,8 +87,8 @@ def upload_success(files_metadata, dataKeepers, recievedMsg, Socket, fileMetaDat
     clientId = recievedMsg["clientId"]
     MachineIp = recievedMsg["ip"]
     MachinePort = recievedMsg["port"]
-    DKs = [MachineIp]
     # Update The Look-Up Table
+    DKs = [MachineIp]
     fileMetaDataLock.acquire()
     files_metadata[fileName] = FileDetails(fileName, clientId, DKs)
     fileMetaDataLock.release()

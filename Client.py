@@ -6,9 +6,9 @@ action = sys.argv[1]
 fileName = sys.argv[2]
 clientID = sys.argv[3]
 
+# Connect to all Master ports in random order
 socketMaster, contextMaster = configure_multiple_ports(
     masterIP, masterPortsArr, zmq.REQ)
-
 
 def Download_file(socketMaster):
     # Ask The master For The ip and Port

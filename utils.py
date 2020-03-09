@@ -1,18 +1,18 @@
-import socket
-from contextlib import closing
-from math import ceil
-import pickle
 import zmq
+import time
 import enum
-from DataKeeper import DataKeeper
+import socket
+import pickle
+import random
+from math import ceil
 from Port import Port
+from contextlib import closing
+from DataKeeper import DataKeeper
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-import time
+
 
 # Functions
-
-
 def configure_port(ipPort, portType, connectionType, openTimeOut=False):
     context = zmq.Context()
     socket = context.socket(portType)
@@ -42,7 +42,10 @@ def configure_multiple_ports(IPs, ports, portType, openTimeOut=False):
         for ip in IPs:
             socket.connect("tcp://" + ip + ":" + ports)
     else:
-        for port in ports:
+        tempPorts = ports.copy()
+        random.shuffle(tempPorts)
+        for port in tempPorts:
+            print(port)
             socket.connect("tcp://" + IPs + ":" + port)
     return socket, context
 
@@ -85,7 +88,7 @@ dataKeepersIps = [get_ip()]  # TODO to be fill
 dataKeeperPorts = []
 
 ########### Master Constants ###############
-masterNumOfProcesses = 1
+masterNumOfProcesses = 5
 masterReplicatePort = "50001"
 masterIP = get_ip()
 masterPortsArr = []

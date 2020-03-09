@@ -133,8 +133,9 @@ def MasterDK_Rep(dataKeepers, files_metadata, fileMetaDataLock, dataKeepersLock)
                 # Find Number of Dst equal to number of Replications Needed
                 freePorts = select_machines_to_copy_to(
                     Replications, file.DKs, dataKeepers, dataKeepersLock)
-                # transfer data from source to all destinations
-                notify_DKs(srcIp, srcPort, freePorts, file.fileName,
+                if(len(freePorts) > 0):
+                    # transfer data from source to all destinations
+                     notify_DKs(srcIp, srcPort, freePorts, file.fileName,
                            dataKeepers, files_metadata, fileMetaDataLock, dataKeepersLock)
 
         time.sleep(replicationPeriod)
