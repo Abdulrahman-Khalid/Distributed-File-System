@@ -4,6 +4,7 @@ from utils import *
 import pickle
 import sys
 import cv2
+import threading
 
 
 def replicate_as_DST(recievedMsg, filePath, arrFullPaths, mainSocket):
@@ -103,11 +104,10 @@ def send_upload_success_to_master(recievedMsg, filePath, myIp, myPort):
 
 
 ############## Main Funciton ##############
-def DK_Rep(myPort, filePath, arrFullPaths, myIp):
+def DK_Rep(myPort, filePath, arrFullPaths, myIp, arrFullPathsLock):
     # Configure myself as Replier
     mainSocket, mainContext = configure_port(
         myIp + ":{}".format(myPort), zmq.REP, "bind")
-
     while (True):
         # Recieve Msg
         recievedMsg = pickle.loads(mainSocket.recv())
@@ -117,9 +117,10 @@ def DK_Rep(myPort, filePath, arrFullPaths, myIp):
         if(msgType == MsgDetails.MASTER_DK_REPLICATE):
             replicationRole = recievedMsg["type"]
             if(replicationRole == DataKeeperType.DST):
+                arrFullPathsLock.acquire()
                 replicate_as_DST(recievedMsg, filePath,
                                  arrFullPaths, mainSocket)
-
+                arrFullPathsLock.release()
             elif(replicationRole == DataKeeperType.SRC):
                 replicate_as_SRC(recievedMsg, myPort, myIp,
                                  filePath, mainSocket)
