@@ -6,17 +6,16 @@ from DataKeeper import DataKeeper
 from MasterClient import MasterClient
 from MasterDK_Rep import MasterDK_Rep
 from MasterDK_Alive import MasterDK_Alive
-import threading
 
 manager = multiprocessing.Manager()
 # Save all the Data Keepers Informaton
 # [their IP, their free and busy Ports, isAlive of not ]
 dataKeepers = manager.dict()
-dataKeepersLock = threading.Lock()
+dataKeepersLock = multiprocessing.Lock()
 # Save all files Informaton
 # [their name, their Client ID, the Data Keepers that they are in ]
 files_metadata = manager.dict()
-fileMetaDataLock = threading.Lock()
+fileMetaDataLock = multiprocessing.Lock()
 
 ports = {}
 # Generate Ports for all data keepers processes
@@ -30,20 +29,20 @@ for ip in dataKeepersIps:
 processes = []
 
 # Keep DK alives Process
-p = multiprocessing.Process(target = MasterDK_Alive,
+p = multiprocessing.Process(target=MasterDK_Alive,
                             args=(dataKeepers, dataKeepersLock))
 processes.append(p)  # remember it
 p.start()  # ...and run!
 
 # N-Replicates Process
 p = multiprocessing.Process(
-    target = MasterDK_Rep, args=(dataKeepers, files_metadata, fileMetaDataLock, dataKeepersLock))
+    target=MasterDK_Rep, args=(dataKeepers, files_metadata, fileMetaDataLock, dataKeepersLock))
 processes.append(p)  # remember it
 p.start()  # ...and run!
 
 # Client & DK Processes
 for x in range(masterNumOfProcesses):
-    p = multiprocessing.Process(target = MasterClient, args = (
+    p = multiprocessing.Process(target=MasterClient, args=(
         dataKeepers, files_metadata, masterPortsArr[x], fileMetaDataLock, dataKeepersLock))
     processes.append(p)  # remember it
     p.start()  # ...and run!

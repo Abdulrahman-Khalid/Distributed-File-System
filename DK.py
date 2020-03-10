@@ -4,11 +4,10 @@ import os
 from utils import *
 from DKMaster_Alive import DK_Master_Alive
 from DK_Rep import DK_Rep
-import threading
 
 manager = multiprocessing.Manager()
 arrFullPaths = manager.list()
-arrFullPathsLock = threading.Lock()
+arrFullPathsLock = multiprocessing.Lock()
 
 path = './Videos/'
 IP = get_ip()

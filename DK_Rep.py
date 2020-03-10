@@ -4,7 +4,6 @@ from utils import *
 import pickle
 import sys
 import cv2
-import threading
 
 
 def replicate_as_DST(recievedMsg, filePath, arrFullPaths, mainSocket, arrFullPathsLock):
