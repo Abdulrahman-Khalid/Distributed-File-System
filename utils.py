@@ -81,7 +81,6 @@ class DataKeeperType(enum.Enum):
 
 # Constants #
 ########### Data Keepers Constants ###############
-dataKeepersNum = 1
 dataKeeperNumOfProcesses = 1
 dataKeepersAlivePort = "30000"
 dataKeepersIps = [get_ip()]  # TODO to be fill

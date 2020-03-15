@@ -17,12 +17,11 @@ def MasterDK_Alive(dataKeepers, dataKeepersLock):
     # Dictionary used to keep track the last time
     # that a data Keeper send Alive Msg
     isAliveDict = {}
+    
     # Initialize it with Zeros
-    dataKeepersLock.acquire()
     for ip in dataKeepers.keys():
         isAliveDict[ip] = 0
-    dataKeepersLock.release()
-
+  
     while True:
         # Wait for Alive Msg
         receivedMessage = pickle.loads(subSocket.recv())
