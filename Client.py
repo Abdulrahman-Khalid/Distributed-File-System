@@ -15,6 +15,7 @@ def Download_file(socketMaster):
     ask_master_to_download()
     # Recieve ip and Port from Master
     msgFromMaster = pickle.loads(socketMaster.recv())
+
     # End Connection with Master
     socketMaster.close()
     contextMaster.destroy()
@@ -22,6 +23,7 @@ def Download_file(socketMaster):
     if(msgFromMaster['id'] == MsgDetails.FAIL):
         print(msgFromMaster["Msg"])
         return
+   
     # Connect to data keeper
     ipPort = msgFromMaster['ip'] + ":" + msgFromMaster['port']
     socketDK, contextDK = configure_port(ipPort, zmq.REQ, "connect")
@@ -68,9 +70,7 @@ def Upload_File(socketMaster):
     ipPort = msgFromMaster['ip'] + ":" + msgFromMaster['port']
     socketDK, contextDK = configure_port(ipPort, zmq.REQ, "connect")
     # Upload File To DK
-    print("1")
     upload_file_to_DK(socketDK, data)
-    print("2")
     # Recieve OK MSG From DK
     msgFromDK = pickle.loads(socketDK.recv())
     # End Connection with DK

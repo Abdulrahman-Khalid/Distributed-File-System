@@ -45,10 +45,13 @@ def configure_multiple_ports(IPs, ports, portType, openTimeOut=False):
         tempPorts = ports.copy()
         random.shuffle(tempPorts)
         for port in tempPorts:
-            print(port)
             socket.connect("tcp://" + IPs + ":" + port)
     return socket, context
 
+def setTimeOut(socket, Time):
+    socket.setsockopt(zmq.RCVTIMEO, Time)
+    socket.setsockopt(zmq.LINGER,      0)
+    socket.setsockopt(zmq.AFFINITY,    1)
 
 def get_ip():
     with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as s:
@@ -84,7 +87,7 @@ class DataKeeperType(enum.Enum):
 dataKeepersNum = 1
 dataKeeperNumOfProcesses = 1
 dataKeepersAlivePort = "30000"
-dataKeepersIps = [get_ip()]  # TODO to be fill
+dataKeepersIps = ["192.168.1.8", "192.168.1.9", "192.168.1.10", "192.168.1.11"] 
 dataKeeperPorts = []
 
 ########### Master Constants ###############
@@ -94,7 +97,7 @@ masterIP = get_ip()
 masterPortsArr = []
 
 ########### Replcatons Constants ###############
-replicationFactor = 1
+replicationFactor = 2
 replicationPeriod = 4
 
 

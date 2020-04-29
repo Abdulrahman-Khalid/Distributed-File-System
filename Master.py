@@ -8,10 +8,12 @@ from MasterDK_Rep import MasterDK_Rep
 from MasterDK_Alive import MasterDK_Alive
 
 manager = multiprocessing.Manager()
+
 # Save all the Data Keepers Informaton
 # [their IP, their free and busy Ports, isAlive of not ]
 dataKeepers = manager.dict()
 dataKeepersLock = multiprocessing.Lock()
+
 # Save all files Informaton
 # [their name, their Client ID, the Data Keepers that they are in ]
 files_metadata = manager.dict()
@@ -31,21 +33,21 @@ processes = []
 # Keep DK alives Process
 p = multiprocessing.Process(target=MasterDK_Alive,
                             args=(dataKeepers, dataKeepersLock))
-processes.append(p)  # remember it
-p.start()  # ...and run!
+processes.append(p)  
+p.start()  
 
 # N-Replicates Process
 p = multiprocessing.Process(
     target=MasterDK_Rep, args=(dataKeepers, files_metadata, fileMetaDataLock, dataKeepersLock))
-processes.append(p)  # remember it
-p.start()  # ...and run!
+processes.append(p) 
+p.start() 
 
 # Client & DK Processes
 for x in range(masterNumOfProcesses):
     p = multiprocessing.Process(target=MasterClient, args=(
         dataKeepers, files_metadata, masterPortsArr[x], fileMetaDataLock, dataKeepersLock))
-    processes.append(p)  # remember it
-    p.start()  # ...and run!
+    processes.append(p)  
+    p.start() 
 
 # Wait for every process to end
 for p in processes:
